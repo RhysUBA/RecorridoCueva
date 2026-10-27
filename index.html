@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101714">
-  <title>Recorrido inmersivo de la cueva · Beta 0.6</title>
-  <meta name="description" content="Prototipo panorámico inmersivo de una cueva con editor de puntos de salto.">
+  <title>Recorrido inmersivo de la cueva · Beta 0.7</title>
+  <meta name="description" content="Prototipo panorámico inmersivo de una cueva con editor de puntos de salto y HUD VR ocultable.">
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <style>
     :root{color-scheme:dark;--bg:#101714;--panel:rgba(12,19,16,.91);--line:rgba(228,220,194,.22);--text:#f1eee3;--muted:#b9c1b8;--accent:#c6a36a;--accent2:#5fb5a0;--danger:#cf796b}
@@ -67,7 +67,7 @@
 </head>
 <body>
   <div class="chrome topbar" id="desktopTopbar">
-    <div class="brand"><div class="eyebrow">Prototipo de investigación · Beta 0.6</div><h1>Recorrido inmersivo de la cueva</h1></div>
+    <div class="brand"><div class="eyebrow">Prototipo de investigación · Beta 0.7</div><h1>Recorrido inmersivo de la cueva</h1></div>
     <div class="status" id="statusPill">● Modo panorámico</div>
   </div>
 
@@ -148,7 +148,11 @@
     <a-entity id="cameraRig">
       <a-camera id="camera" position="0 0 0" look-controls="enabled: true" wasd-controls="enabled: false">
         <a-entity id="gazeCursor" cursor="fuse: true; fuseTimeout: 1400; rayOrigin: entity" raycaster="objects: .vr-clickable; far: 8" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.008; radiusOuter: 0.014" material="color: #f3d49b; shader: flat"></a-entity>
-
+        <!-- Pequeño control permanente en el borde inferior derecho para recuperar el HUD cuando está oculto. -->
+        <a-entity id="vrHudToggle" visible="false" position="0.56 -0.48 -1.10">
+          <a-plane id="vrHudToggleButton" class="vr-clickable" width="0.34" height="0.13" material="color: #2b3930; opacity: 0.94; transparent: true; shader: flat" side="double"></a-plane>
+          <a-text id="vrHudToggleLabel" value="− HUD" align="center" width="0.30" color="#f1eee3" position="0 0 0.01"></a-text>
+        </a-entity>
       </a-camera>
     </a-entity>
 
@@ -192,6 +196,9 @@
     const mapModal = $('mapModal');
     const vrMenu = $('vrMenu');
     const vrMapPanel = $('vrMapPanel');
+    const vrHudToggle = $('vrHudToggle');
+    const vrHudToggleButton = $('vrHudToggleButton');
+    const vrHudToggleLabel = $('vrHudToggleLabel');
     const raycaster = new THREE.Raycaster();
     const pointerNDC = new THREE.Vector2();
     let current = 0;
@@ -202,6 +209,8 @@
     let config = { version: 1, hotspots: Object.fromEntries(scenes.map(s => [s.id, []])) };
     let gazeHoveredHotspotId = null;
     let initialized = false;
+    // Estado del HUD en VR: menu, map o hidden.
+    let vrHudState = 'hidden';
 
 
     // Place a VR panel at the current view direction once; it is then stationary in world space.
@@ -325,20 +334,47 @@
     const next = () => goTo(current + 1);
     const previous = () => goTo(current - 1);
 
+    function updateVrHudToggle() {
+      const hidden = vrHudState === 'hidden';
+      vrHudToggleLabel.setAttribute('value', hidden ? '+ HUD' : '− HUD');
+      vrHudToggleLabel.setAttribute('color', hidden ? '#f1eee3' : '#151711');
+      vrHudToggleButton.setAttribute('material', `color: ${hidden ? '#2b3930' : '#c6a36a'}; opacity: 0.96; transparent: true; shader: flat`);
+    }
+
+    function setVrHudState(state, reposition = true) {
+      vrHudState = state;
+      if (state === 'menu') {
+        vrMapPanel.setAttribute('visible', false);
+        if (reposition) positionHudInFrontOfCamera(vrMenu, 1.55, -0.30);
+        vrMenu.setAttribute('visible', true);
+      } else if (state === 'map') {
+        vrMenu.setAttribute('visible', false);
+        if (reposition) positionHudInFrontOfCamera(vrMapPanel, 1.55, 0.0);
+        vrMapPanel.setAttribute('visible', true);
+      } else {
+        vrMenu.setAttribute('visible', false);
+        vrMapPanel.setAttribute('visible', false);
+      }
+      updateVrHudToggle();
+    }
+
+    function toggleVrHud() {
+      if (!afScene.is('vr-mode')) return;
+      // Al recuperar el HUD, siempre mostramos el menú principal frente a la vista actual.
+      setVrHudState(vrHudState === 'hidden' ? 'menu' : 'hidden', true);
+    }
+
     function openMap() {
       if (afScene.is('vr-mode')) {
-        vrMenu.setAttribute('visible', false);
-        positionHudInFrontOfCamera(vrMapPanel, 1.55, 0.0);
-        vrMapPanel.setAttribute('visible', true);
+        setVrHudState('map', true);
       } else mapModal.classList.add('open');
     }
     function closeMap() {
       mapModal.classList.remove('open');
-      vrMapPanel.setAttribute('visible', false);
       if (afScene.is('vr-mode')) {
-        positionHudInFrontOfCamera(vrMenu, 1.55, -0.30);
-        vrMenu.setAttribute('visible', true);
-      }
+        if (vrHudState === 'map') setVrHudState('menu', true);
+        else vrMapPanel.setAttribute('visible', false);
+      } else vrMapPanel.setAttribute('visible', false);
     }
 
     function updateTargetOptions() {
@@ -685,6 +721,11 @@
     $('vrNext').addEventListener('click', next);
     $('vrMapBtn').addEventListener('click', openMap);
     $('vrMapClose').addEventListener('click', closeMap);
+    // El pequeño botón permanece visible junto a la cámara para volver a mostrar el HUD.
+    vrHudToggleButton.addEventListener('click', toggleVrHud);
+    window.addEventListener('keydown', event => {
+      if ((event.key === 'h' || event.key === 'H') && afScene.is('vr-mode')) toggleVrHud();
+    });
     $('targetSelect').addEventListener('change', () => {
       const h = getSelectedHotspot();
       if (h) { h.target = $('targetSelect').value; updateSelectedHotspotFromFields(); }
@@ -712,26 +753,22 @@
 
     afScene.addEventListener('enter-vr', () => {
       if (editing) toggleEditor(false);
-      vrMenu.setAttribute('visible', false);
-      vrMapPanel.setAttribute('visible', false);
+      setVrHudState('hidden', false);
+      vrHudToggle.setAttribute('visible', true);
       $('desktopTopbar').classList.add('hidden');
       $('desktopSceneCard').classList.add('hidden');
       $('desktopControls').classList.add('hidden');
       $('desktopHint').classList.add('hidden');
       $('editorPanel').classList.add('hidden');
-      // Let the XR camera pose update first, then place the HUD once in world space.
-      requestAnimationFrame(() => {
-        positionHudInFrontOfCamera(vrMenu, 1.55, -0.30);
-        positionHudInFrontOfCamera(vrMapPanel, 1.55, 0.0);
-        vrMenu.setAttribute('visible', true);
-      });
-      // Gaze dwell and controller laser can now reach the fixed-in-world controls.
+      // Let the XR camera pose update first, then place the menu in front of the current view.
+      requestAnimationFrame(() => setVrHudState('menu', true));
+      // Gaze dwell and controller laser can reach the fixed-in-world controls.
       gazeCursor.setAttribute('cursor', 'fuse: true; fuseTimeout: 1400; rayOrigin: entity');
       setStatus('● Modo inmersivo activo');
     });
     afScene.addEventListener('exit-vr', () => {
-      vrMenu.setAttribute('visible', false);
-      vrMapPanel.setAttribute('visible', false);
+      setVrHudState('hidden', false);
+      vrHudToggle.setAttribute('visible', false);
       $('desktopTopbar').classList.remove('hidden');
       $('desktopSceneCard').classList.remove('hidden');
       $('desktopControls').classList.remove('hidden');
