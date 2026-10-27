@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101714">
+  <title>Recorrido inmersivo de la cueva · Beta 0.4</title>
+  <meta name="description" content="Prototipo panorámico inmersivo de una cueva con editor de puntos de salto.">
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <style>
+    :root{color-scheme:dark;--bg:#101714;--panel:rgba(12,19,16,.91);--line:rgba(228,220,194,.22);--text:#f1eee3;--muted:#b9c1b8;--accent:#c6a36a;--accent2:#5fb5a0;--danger:#cf796b}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    a-scene{position:fixed;inset:0}
+    .chrome{position:fixed;z-index:20;pointer-events:none}
+    .topbar{top:env(safe-area-inset-top,12px);left:12px;right:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .brand,.scene-card,.controls,.hint,.editor-panel{pointer-events:auto;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(14px);box-shadow:0 12px 40px #0004}
+    .brand{padding:11px 14px;border-radius:14px;max-width:min(650px,75vw)}
+    .eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:750}
+    .brand h1{font-size:clamp(14px,2vw,20px);line-height:1.25;margin:4px 0 0;font-weight:650}
+    .status{font-size:11px;border:1px solid #5fb5a055;color:#a8dfd1;background:#18342d;border-radius:99px;padding:7px 10px;white-space:nowrap;pointer-events:auto}
+    .scene-card{position:fixed;z-index:20;top:86px;left:12px;padding:10px 13px;border-radius:12px;max-width:min(360px,75vw);pointer-events:none}
+    .scene-card .label{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+    .scene-card strong{display:block;margin-top:3px;font-size:17px;font-weight:650}
+    .scene-card p{margin:4px 0 0;color:#c7cec6;font-size:12px;line-height:1.4}
+    .controls{position:fixed;z-index:20;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);padding:10px;border-radius:16px;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 24px);flex-wrap:wrap;justify-content:center}
+    button,input,select{font:inherit}
+    button{cursor:pointer;color:var(--text);border:1px solid var(--line);background:#25312b;border-radius:10px;min-height:38px;padding:8px 12px;font-weight:600;font-size:12px;white-space:nowrap}
+    button:hover{border-color:var(--accent);background:#314137}
+    button.primary{background:var(--accent);border-color:var(--accent);color:#1a1a14}
+    button.primary:hover{background:#d6b981}
+    button:disabled{opacity:.38;cursor:not-allowed}
+    .hint{position:fixed;z-index:20;right:12px;bottom:88px;border-radius:12px;padding:9px 12px;font-size:11px;color:#d4d9d2;max-width:250px;line-height:1.45}
+    .editor-panel{position:fixed;z-index:35;right:12px;top:132px;bottom:82px;width:min(365px,calc(100vw - 24px));border-radius:16px;padding:14px;overflow:auto;pointer-events:auto}
+    .editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+    .editor-head h2{font-size:16px;margin:0}.editor-head p{font-size:11px;line-height:1.4;color:var(--muted);margin:4px 0 0}
+    .field{display:grid;gap:5px;margin:12px 0}
+    .field label{font-size:11px;color:#d8ddd7;font-weight:650}
+    .field input,.field select{min-width:0;width:100%;background:#101814;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px;font-size:12px;outline:none}
+    .field input:focus,.field select:focus{border-color:var(--accent)}
+    .editor-actions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+    .editor-actions button{flex:1}
+    .editor-tip{font-size:11px;line-height:1.5;color:#d7ded7;background:#1a2821;border:1px solid #5fb5a044;border-radius:10px;padding:10px;margin:12px 0}
+    .list-head{display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .hotspot-list{display:grid;gap:7px}
+    .hotspot-row{display:flex;gap:7px;align-items:stretch}
+    .hotspot-row .choose{white-space:normal;text-align:left;flex:1;line-height:1.35;min-width:0}
+    .hotspot-row .choose small{display:block;color:#b9c1b8;font-size:10px;font-weight:450;margin-top:3px}
+    .hotspot-row .choose.selected{border-color:var(--accent);background:#3a3325}
+    .hotspot-row .delete{color:#f3b0a5;border-color:#cf796b55;min-width:38px;padding:6px}
+    .empty-list{font-size:11px;line-height:1.45;color:var(--muted);padding:10px;border:1px dashed var(--line);border-radius:10px}
+    .save-state{font-size:10px;color:#a8dfd1;min-height:15px;margin-top:8px;line-height:1.35}
+    .map-modal{position:fixed;z-index:60;inset:0;background:#070a09d9;display:none;align-items:center;justify-content:center;padding:18px;pointer-events:auto}
+    .map-modal.open{display:flex}
+    .map-window{width:min(920px,100%);max-height:92dvh;overflow:auto;background:#151e19;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 24px 80px #0009}
+    .map-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .map-head h2{font-size:16px;margin:0}.map-head p{font-size:12px;color:var(--muted);margin:4px 0 0}
+    .map-window img{display:block;width:100%;max-height:68dvh;object-fit:contain;background:#e0e0d9;border-radius:10px}
+    .map-note{font-size:11px;color:var(--muted);margin:9px 2px 0}
+    .hidden{display:none!important}
+    .visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .edit-on .status{color:#f3d49b;background:#403522;border-color:#c6a36a88}
+    .edit-on .hint{border-color:#c6a36a99}
+    .a-enter-vr{display:none!important}
+    @media(max-width:600px){.brand{padding:9px 11px}.status{font-size:10px;padding:6px 8px}.scene-card{top:72px}.controls{gap:6px;padding:8px}.controls button{font-size:11px;padding:7px 9px;min-height:36px}.hint{display:none}.editor-panel{top:118px;bottom:78px;padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="chrome topbar" id="desktopTopbar">
+    <div class="brand"><div class="eyebrow">Prototipo de investigación · Beta 0.5</div><h1>Recorrido inmersivo de la cueva</h1></div>
+    <div class="status" id="statusPill">● Modo panorámico</div>
+  </div>
+
+  <div class="scene-card" id="desktopSceneCard">
+    <div class="label" id="sceneIndex">PUNTO 01 / 02</div>
+    <strong id="sceneTitle">Entrada principal</strong>
+    <p id="sceneDescription">Vista panorámica del acceso exterior a la cavidad.</p>
+  </div>
+
+  <div class="chrome controls" id="desktopControls">
+    <button id="prevBtn" aria-label="Punto anterior">← Anterior</button>
+    <button class="primary" id="nextBtn">Siguiente punto →</button>
+    <button id="editBtn">＋ Editar saltos</button>
+    <button id="mapBtn">⌖ Ver plano</button>
+    <button id="vrBtn">◉ Entrar en VR</button>
+  </div>
+  <div class="hint" id="desktopHint">Arrastra para mirar alrededor. Los marcadores circulares permiten saltar entre ubicaciones.</div>
+
+  <aside class="editor-panel hidden" id="editorPanel" aria-label="Editor de puntos de salto">
+    <div class="editor-head">
+      <div><h2>Editor de saltos</h2><p>Coloca el punto sobre la imagen panorámica y asígnale un destino.</p></div>
+      <button id="closeEditorBtn" title="Terminar edición">✕</button>
+    </div>
+    <div class="editor-tip"><b>Cómo colocarlos:</b> haz clic en la imagen donde debe aparecer el salto. Para ajustar uno existente, arrastra su marcador. Estos puntos se guardan por ubicación.</div>
+    <div class="field"><label for="targetSelect">Destino del salto</label><select id="targetSelect"></select></div>
+    <div class="field"><label for="labelInput">Texto del marcador</label><input id="labelInput" maxlength="36" value="Entrar en la cueva" placeholder="Ej. Entrar en la cueva"></div>
+    <div class="editor-actions">
+      <button id="saveBtn" class="primary">Guardar en navegador</button>
+      <button id="exportBtn">Exportar JSON</button>
+    </div>
+    <div class="editor-actions">
+      <button id="importBtn">Importar JSON</button>
+      <input class="visually-hidden" id="importFile" type="file" accept="application/json,.json">
+      <button id="deleteSelectedBtn">Eliminar seleccionado</button>
+    </div>
+    <div class="save-state" id="saveState" aria-live="polite">Los puntos se guardan en este navegador al pulsar Guardar.</div>
+    <div class="list-head"><span>Saltos de esta ubicación</span><span id="hotspotCount">0</span></div>
+    <div id="hotspotList" class="hotspot-list"><div class="empty-list">Todavía no hay saltos en esta panorámica.</div></div>
+  </aside>
+
+  <div class="map-modal" id="mapModal" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+    <div class="map-window">
+      <div class="map-head"><div><h2 id="mapTitle">Plano de referencia</h2><p>Esquema aportado para orientar el recorrido.</p></div><button id="closeMapBtn" aria-label="Cerrar plano">Cerrar ✕</button></div>
+      <img src="assets/plano-cueva.jpg" alt="Plano esquemático de la cueva">
+      <p class="map-note">El plano es una referencia visual; las posiciones panorámicas aún no están registradas sobre el mapa.</p>
+    </div>
+  </div>
+
+  <a-scene id="scene" renderer="colorManagement: true; antialias: true" background="color: #101714" vr-mode-ui="enabled: false" loading-screen="enabled: true; backgroundColor: #101714; dotsColor: #c6a36a" webxr="optionalFeatures: hand-tracking">
+    <a-assets timeout="20000">
+      <img id="pano-entrada" src="assets/entrada.jpg" crossorigin="anonymous">
+      <img id="pano-interior" src="assets/interior.jpg" crossorigin="anonymous">
+      <img id="plano-vr" src="assets/plano-cueva.jpg" crossorigin="anonymous">
+    </a-assets>
+    <a-sky id="panoramaSky" src="#pano-entrada" rotation="0 0 0"></a-sky>
+    <a-entity id="hotspotLayer"></a-entity>
+
+    <a-entity id="cameraRig">
+      <a-camera id="camera" position="0 0 0" look-controls="enabled: true" wasd-controls="enabled: false">
+        <a-entity id="gazeCursor" cursor="fuse: true; fuseTimeout: 1400; rayOrigin: entity" raycaster="objects: .vr-clickable; far: 8" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.008; radiusOuter: 0.014" material="color: #f3d49b; shader: flat"></a-entity>
+
+        <a-entity id="vrMenu" visible="false" position="0 -0.52 -1.60">
+          <!-- Panel de navegación reducido para ocupar menos espacio visual en el visor. -->
+          <a-plane width="1.58" height="0.40" material="color: #111a15; opacity: 0.91; transparent: true; shader: flat" position="0 0 -0.01"></a-plane>
+          <a-text id="vrTitle" value="PUNTO 01 · ENTRADA PRINCIPAL" align="center" width="1.55" color="#f1eee3" position="0 0.13 0.01"></a-text>
+          <a-plane id="vrPrev" class="vr-clickable" width="0.43" height="0.18" position="-0.49 -0.075 0.02" material="color: #2b3930; shader: flat" side="double"></a-plane>
+          <a-text value="ANTERIOR" align="center" width="0.60" color="#f1eee3" position="-0.49 -0.075 0.03"></a-text>
+          <a-plane id="vrNext" class="vr-clickable" width="0.44" height="0.18" position="0.00 -0.075 0.02" material="color: #c6a36a; shader: flat" side="double"></a-plane>
+          <a-text value="SIGUIENTE" align="center" width="0.64" color="#151711" position="0 -0.075 0.03"></a-text>
+          <a-plane id="vrMapBtn" class="vr-clickable" width="0.37" height="0.18" position="0.49 -0.075 0.02" material="color: #2b3930; shader: flat" side="double"></a-plane>
+          <a-text value="PLANO" align="center" width="0.52" color="#f1eee3" position="0.49 -0.075 0.03"></a-text>
+        </a-entity>
+
+        <a-entity id="vrMapPanel" visible="false" position="0 0 -1.55">
+          <a-plane width="1.40" height="1.42" material="color: #111a15; opacity: 0.96; transparent: true; shader: flat" position="0 0 -0.02"></a-plane>
+          <a-text value="PLANO DE REFERENCIA" align="center" width="1.6" color="#f1eee3" position="0 0.58 0.01"></a-text>
+          <a-image src="#plano-vr" width="1.16" height="1.00" position="0 0.02 0.01"></a-image>
+          <a-plane id="vrMapClose" class="vr-clickable" width="0.68" height="0.22" position="0 -0.58 0.03" material="color: #c6a36a; shader: flat" side="double"></a-plane>
+          <a-text value="VOLVER AL RECORRIDO" align="center" width="1.0" color="#151711" position="0 -0.58 0.04"></a-text>
+        </a-entity>
+      </a-camera>
+    </a-entity>
+
+    <a-entity id="leftLaser" laser-controls="hand: left" raycaster="objects: .vr-clickable; far: 8" line="color: #c6a36a; opacity: 0.78"></a-entity>
+    <a-entity id="rightLaser" laser-controls="hand: right" raycaster="objects: .vr-clickable; far: 8" line="color: #c6a36a; opacity: 0.78"></a-entity>
+    <a-entity id="leftHand" hand-tracking-controls="hand: left; modelColor: #d6b981; modelOpacity: 0.92"></a-entity>
+    <a-entity id="rightHand" hand-tracking-controls="hand: right; modelColor: #d6b981; modelOpacity: 0.92"></a-entity>
+    <a-entity id="mouseCursor" cursor="rayOrigin: mouse; fuse: false" raycaster="objects: .vr-clickable; far: 8"></a-entity>
+  </a-scene>
+
+  <script>
+  (() => {
+    'use strict';
+    // Las escenas se cargan desde assets/escenas.json para que añadir fotos no requiera editar este HTML.
+    let scenes = [
+      { id: 'entrada', title: 'Entrada principal', description: 'Vista panorámica del acceso exterior a la cavidad.', image: 'assets/entrada.jpg' },
+      { id: 'interior', title: 'Interior del túnel', description: 'Vista panorámica del interior rocoso y la continuación de la cueva.', image: 'assets/interior.jpg' },
+      { id: 'galeria-arco-gris', title: 'Galería del arco gris', description: 'Cámara amplia con un arco rocoso gris y un paso oscuro al fondo.', image: 'assets/galeria-arco-gris.jpg' },
+      { id: 'paso-iluminado', title: 'Paso central iluminado', description: 'Pasaje central con luces de referencia y continuación hacia el interior.', image: 'assets/paso-iluminado.jpg' },
+      { id: 'galeria-arqueada', title: 'Galería arqueada', description: 'Arco natural de roca que enmarca una galería oscura.', image: 'assets/galeria-arqueada.jpg' },
+      { id: 'tunel-estratificado', title: 'Túnel de roca estratificada', description: 'Galería de techo bajo con capas de roca visibles y un paso central.', image: 'assets/tunel-estratificado.jpg' },
+      { id: 'camara-luminosa', title: 'Cámara de paso iluminada', description: 'Cámara con dos luces de trabajo y un corredor central.', image: 'assets/camara-luminosa.jpg' },
+      { id: 'bifurcacion-rocosa', title: 'Bifurcación rocosa', description: 'Vista de varios huecos y pasos separados por formaciones rocosas.', image: 'assets/bifurcacion-rocosa.jpg' },
+      { id: 'galeria-mineral-rojiza', title: 'Galería de mineral rojizo', description: 'Arco de tonos rojizos y ocres con un pasaje hacia el fondo.', image: 'assets/galeria-mineral-rojiza.jpg' },
+      { id: 'pasaje-oscuro', title: 'Pasaje oscuro', description: 'Paso irregular y oscuro entre paredes rocosas.', image: 'assets/pasaje-oscuro.jpg' },
+      { id: 'camara-arcos-laterales', title: 'Cámara de arcos laterales', description: 'Cámara de roca con aberturas a ambos lados y suelo de tierra.', image: 'assets/camara-arcos-laterales.jpg' },
+      { id: 'galeria-estratos-ocres', title: 'Galería de estratos ocres', description: 'Formaciones grises y ocres alrededor de una abertura central.', image: 'assets/galeria-estratos-ocres.jpg' },
+      { id: 'cruce-de-galerias', title: 'Cruce de galerías', description: 'Cruce con varios accesos visibles en distintas direcciones.', image: 'assets/cruce-de-galerias.jpg' },
+      { id: 'arco-central-rojizo', title: 'Arco central rojizo', description: 'Arco de roca rojiza que enmarca el paso hacia el siguiente sector.', image: 'assets/arco-central-rojizo.jpg' }
+    ];
+    const STORAGE_KEY = 'cueva-vr-hotspots-v3';
+    const CONFIG_URL = 'assets/recorrido-config.json';
+    const SCENES_URL = 'assets/escenas.json';
+    const HOTSPOT_RADIUS = 4.15;
+    const $ = id => document.getElementById(id);
+    const afScene = $('scene');
+    const cameraEl = $('camera');
+    const sky = $('panoramaSky');
+    const hotspotLayer = $('hotspotLayer');
+    const gazeCursor = $('gazeCursor');
+    const mapModal = $('mapModal');
+    const vrMenu = $('vrMenu');
+    const vrMapPanel = $('vrMapPanel');
+    const raycaster = new THREE.Raycaster();
+    const pointerNDC = new THREE.Vector2();
+    let current = 0;
+    let editing = false;
+    let selectedHotspotId = null;
+    let activeDragId = null;
+    let suppressClickUntil = 0;
+    let config = { version: 1, hotspots: Object.fromEntries(scenes.map(s => [s.id, []])) };
+    let gazeHoveredHotspotId = null;
+    let initialized = false;
+
+    const sceneById = id => scenes.find(s => s.id === id) || scenes[0];
+    const currentScene = () => scenes[current];
+    const currentHotspots = () => config.hotspots[currentScene().id] || (config.hotspots[currentScene().id] = []);
+    const sceneName = id => sceneById(id).title;
+    const safeText = (value, fallback='') => String(value ?? fallback).slice(0, 36);
+
+    function normaliseConfig(raw) {
+      const clean = { version: 1, hotspots: {} };
+      for (const s of scenes) {
+        const rows = Array.isArray(raw?.hotspots?.[s.id]) ? raw.hotspots[s.id] : [];
+        clean.hotspots[s.id] = rows.map((h, i) => {
+          const p = h?.position || {};
+          let v = new THREE.Vector3(Number(p.x) || 0, Number(p.y) || 0, Number(p.z) || -1);
+          if (v.lengthSq() < 0.0001) v.set(0, 0, -1);
+          v.normalize().multiplyScalar(HOTSPOT_RADIUS);
+          const destination = scenes.some(scene => scene.id === h.target) ? h.target : scenes.find(scene => scene.id !== s.id)?.id || scenes[0].id;
+          return {
+            id: String(h.id || `${s.id}-${Date.now()}-${i}-${Math.random().toString(36).slice(2,7)}`),
+            label: safeText(h.label, `Ir a ${sceneName(destination)}`) || `Ir a ${sceneName(destination)}`,
+            target: destination,
+            position: { x: v.x, y: v.y, z: v.z }
+          };
+        });
+      }
+      return clean;
+    }
+
+    function cloneConfig() { return JSON.parse(JSON.stringify(config)); }
+    function saveLocal(showMessage=true) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+        if (showMessage) $('saveState').textContent = 'Guardado en este navegador. Para compartirlo en Quest, exporta el JSON y publícalo junto al proyecto.';
+        $('saveState').style.color = '#a8dfd1';
+      } catch (err) {
+        $('saveState').textContent = 'El navegador no permitió guardar localmente. Usa Exportar JSON.';
+        $('saveState').style.color = '#f3b0a5';
+      }
+    }
+
+    async function loadScenes() {
+      try {
+        const res = await fetch(`${SCENES_URL}?v=5`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`No se pudo leer escenas.json (${res.status})`);
+        const raw = await res.json();
+        if (!Array.isArray(raw.scenes) || raw.scenes.length < 2) {
+          throw new Error('escenas.json debe incluir al menos dos escenas.');
+        }
+        const seen = new Set();
+        const parsed = raw.scenes.map((item, index) => {
+          const id = String(item?.id ?? '').trim();
+          const title = String(item?.title ?? '').trim();
+          const image = String(item?.image ?? '').trim();
+          if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error(`ID inválido en la escena ${index + 1}: usa letras, números, guiones o guion bajo.`);
+          if (seen.has(id)) throw new Error(`ID repetido en escenas.json: ${id}`);
+          if (!title || !image) throw new Error(`La escena ${id} necesita title e image.`);
+          seen.add(id);
+          return { id, title: safeText(title, `Escena ${index + 1}`), description: String(item?.description ?? '').trim(), image };
+        });
+        scenes = parsed;
+      } catch (err) {
+        console.warn('Usando la lista de escenas de reserva. Revisa assets/escenas.json:', err);
+      }
+    }
+
+    async function loadConfig() {
+      let loaded = null;
+      try {
+        const res = await fetch(`${CONFIG_URL}?v=3`, { cache: 'no-store' });
+        if (res.ok) loaded = await res.json();
+      } catch (_) { /* file:// or offline: use local/default config */ }
+      try {
+        const local = localStorage.getItem(STORAGE_KEY);
+        if (local) loaded = JSON.parse(local);
+      } catch (_) { /* ignore invalid local config */ }
+      config = normaliseConfig(loaded || config);
+    }
+
+    function setStatus(message) { $('statusPill').textContent = message; }
+    function renderScene() {
+      const s = currentScene();
+      sky.setAttribute('src', s.image);
+      $('sceneTitle').textContent = s.title;
+      $('sceneDescription').textContent = s.description;
+      $('sceneIndex').textContent = `PUNTO ${String(current + 1).padStart(2, '0')} / ${String(scenes.length).padStart(2, '0')}`;
+      $('vrTitle').setAttribute('value', `PUNTO ${String(current + 1).padStart(2, '0')} · ${s.title.toUpperCase()}`);
+      $('prevBtn').disabled = scenes.length < 2;
+      $('nextBtn').disabled = scenes.length < 2;
+      updateTargetOptions();
+      renderHotspots();
+      renderHotspotList();
+      if (selectedHotspotId && !currentHotspots().some(h => h.id === selectedHotspotId)) clearSelection();
+    }
+
+    function goTo(index) {
+      current = (index + scenes.length) % scenes.length;
+      selectedHotspotId = null;
+      renderScene();
+      closeMap();
+    }
+    const next = () => goTo(current + 1);
+    const previous = () => goTo(current - 1);
+
+    function openMap() {
+      if (afScene.is('vr-mode')) {
+        vrMenu.setAttribute('visible', false);
+        vrMapPanel.setAttribute('visible', true);
+      } else mapModal.classList.add('open');
+    }
+    function closeMap() {
+      mapModal.classList.remove('open');
+      vrMapPanel.setAttribute('visible', false);
+      if (afScene.is('vr-mode')) vrMenu.setAttribute('visible', true);
+    }
+
+    function updateTargetOptions() {
+      const select = $('targetSelect');
+      const prior = select.value;
+      select.replaceChildren();
+      for (const s of scenes.filter(s => s.id !== currentScene().id)) {
+        const option = document.createElement('option'); option.value = s.id; option.textContent = s.title; select.appendChild(option);
+      }
+      if (![...select.options].some(o => o.value === prior)) select.selectedIndex = 0;
+      if (selectedHotspotId) {
+        const h = currentHotspots().find(item => item.id === selectedHotspotId);
+        if (h && [...select.options].some(o => o.value === h.target)) select.value = h.target;
+      }
+      refreshDefaultLabel();
+    }
+
+    function refreshDefaultLabel() {
+      if (selectedHotspotId) return;
+      const target = $('targetSelect').value || scenes.find(s => s.id !== currentScene().id)?.id || scenes[0].id;
+      $('labelInput').value = `Ir a ${sceneName(target)}`.slice(0, 36);
+    }
+
+    function getSelectedHotspot() { return currentHotspots().find(h => h.id === selectedHotspotId) || null; }
+    function clearSelection() {
+      selectedHotspotId = null;
+      $('labelInput').value = '';
+      $('deleteSelectedBtn').disabled = true;
+      renderHotspots(); renderHotspotList(); refreshDefaultLabel();
+    }
+
+    function makeHotspotEntity(h) {
+      const root = document.createElement('a-entity');
+      root.classList.add('hotspot-root');
+      root.id = `hotspot-${h.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+      root.dataset.hotspotId = h.id;
+      root.object3D.userData.hotspotId = h.id;
+
+      const panel = document.createElement('a-plane');
+      panel.classList.add('vr-clickable');
+      panel.setAttribute('width', '1.18'); panel.setAttribute('height', '0.23');
+      panel.setAttribute('position', '0 -0.23 0');
+      panel.setAttribute('material', 'color: #101714; opacity: 0.88; transparent: true; shader: flat; side: double');
+      root.appendChild(panel);
+
+      const ring = document.createElement('a-ring');
+      ring.classList.add('vr-clickable');
+      ring.setAttribute('radius-inner', '0.085'); ring.setAttribute('radius-outer', '0.135');
+      ring.setAttribute('material', 'color: #5fb5a0; shader: flat; side: double; opacity: 1');
+      ring.setAttribute('position', '0 0 0.018');
+      root.appendChild(ring);
+
+      const center = document.createElement('a-sphere');
+      center.classList.add('vr-clickable');
+      center.setAttribute('radius', '0.052'); center.setAttribute('position', '0 0 0.035');
+      center.setAttribute('material', 'color: #f3d49b; shader: flat');
+      root.appendChild(center);
+
+      const text = document.createElement('a-text');
+      text.setAttribute('value', safeText(h.label, 'Saltar')); text.setAttribute('align', 'center');
+      text.setAttribute('anchor', 'center'); text.setAttribute('width', '1.45');
+      text.setAttribute('color', '#f1eee3'); text.setAttribute('position', '0 -0.23 0.014');
+      text.setAttribute('side', 'double');
+      root.appendChild(text);
+
+      for (const child of [panel, ring, center]) {
+        child.addEventListener('click', evt => {
+          evt.stopPropagation();
+          handleHotspotActivation(h.id);
+        });
+      }
+      root.addEventListener('mouseenter', () => { root.dataset.hover = '1'; });
+      root.addEventListener('mouseleave', () => { delete root.dataset.hover; });
+      return root;
+    }
+
+    function setRootPose(root, position) {
+      root.object3D.position.set(position.x, position.y, position.z);
+      root.object3D.lookAt(0, 0, 0);
+      root.object3D.updateMatrixWorld(true);
+    }
+
+    function renderHotspots() {
+      hotspotLayer.replaceChildren();
+      for (const h of currentHotspots()) {
+        const root = makeHotspotEntity(h);
+        hotspotLayer.appendChild(root);
+        setRootPose(root, h.position);
+        const selected = h.id === selectedHotspotId;
+        const ring = root.querySelector('a-ring');
+        ring.setAttribute('material', 'color', selected ? '#f3d49b' : '#5fb5a0');
+        root.dataset.selected = selected ? 'true' : 'false';
+      }
+    }
+
+    function renderHotspotList() {
+      const list = $('hotspotList');
+      list.replaceChildren();
+      const points = currentHotspots();
+      $('hotspotCount').textContent = String(points.length);
+      $('deleteSelectedBtn').disabled = !getSelectedHotspot();
+      if (!points.length) {
+        const empty = document.createElement('div'); empty.className = 'empty-list';
+        empty.textContent = 'Todavía no hay saltos en esta panorámica. Haz clic sobre la imagen para crear el primero.';
+        list.appendChild(empty); return;
+      }
+      points.forEach((h, index) => {
+        const row = document.createElement('div'); row.className = 'hotspot-row';
+        const choose = document.createElement('button'); choose.className = 'choose' + (h.id === selectedHotspotId ? ' selected' : '');
+        choose.innerHTML = '';
+        const title = document.createElement('span'); title.textContent = `${index + 1}. ${h.label}`;
+        const destination = document.createElement('small'); destination.textContent = `Salta a: ${sceneName(h.target)}`;
+        choose.append(title, destination);
+        choose.addEventListener('click', () => selectHotspot(h.id));
+        const del = document.createElement('button'); del.className = 'delete'; del.textContent = '✕'; del.title = `Eliminar ${h.label}`;
+        del.addEventListener('click', () => deleteHotspot(h.id));
+        row.append(choose, del); list.appendChild(row);
+      });
+    }
+
+    function selectHotspot(id) {
+      const h = currentHotspots().find(item => item.id === id);
+      if (!h) return;
+      selectedHotspotId = id;
+      $('labelInput').value = h.label;
+      if ([...$('targetSelect').options].some(o => o.value === h.target)) $('targetSelect').value = h.target;
+      $('deleteSelectedBtn').disabled = false;
+      renderHotspots(); renderHotspotList();
+      $('saveState').textContent = 'Marcador seleccionado: puedes editar su texto/destino o arrastrarlo en la panorámica.';
+      $('saveState').style.color = '#d4d9d2';
+    }
+
+    function addHotspotAt(position) {
+      const target = $('targetSelect').value || scenes.find(s => s.id !== currentScene().id)?.id || scenes[0].id;
+      const label = safeText($('labelInput').value.trim(), '') || `Ir a ${sceneName(target)}`;
+      const id = `hs-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+      const h = { id, label, target, position: { x: position.x, y: position.y, z: position.z } };
+      currentHotspots().push(h);
+      selectedHotspotId = id;
+      renderHotspots(); renderHotspotList();
+      $('deleteSelectedBtn').disabled = false;
+      $('saveState').textContent = 'Salto añadido. Puedes arrastrarlo para afinar la posición y después guardar.';
+      $('saveState').style.color = '#f3d49b';
+    }
+
+    function updateSelectedHotspotFromFields() {
+      const h = getSelectedHotspot();
+      if (!h) { refreshDefaultLabel(); return; }
+      h.label = safeText($('labelInput').value.trim(), '') || `Ir a ${sceneName(h.target)}`;
+      if ($('targetSelect').value) h.target = $('targetSelect').value;
+      renderHotspots(); renderHotspotList();
+    }
+
+    function deleteHotspot(id) {
+      const arr = currentHotspots();
+      const index = arr.findIndex(h => h.id === id);
+      if (index < 0) return;
+      arr.splice(index, 1);
+      if (selectedHotspotId === id) selectedHotspotId = null;
+      $('labelInput').value = '';
+      renderHotspots(); renderHotspotList(); refreshDefaultLabel();
+      $('saveState').textContent = 'Salto eliminado. Pulsa Guardar o exporta la configuración para conservar el cambio.';
+      $('saveState').style.color = '#f3d49b';
+    }
+
+    function toggleEditor(force) {
+      if (afScene.is('vr-mode')) return;
+      editing = typeof force === 'boolean' ? force : !editing;
+      document.body.classList.toggle('edit-on', editing);
+      $('editorPanel').classList.toggle('hidden', !editing);
+      $('editBtn').textContent = editing ? '✓ Terminar edición' : '＋ Editar saltos';
+      $('desktopHint').innerHTML = editing
+        ? '<b>Edición activa.</b> Haz clic en la panorámica para añadir un salto; arrastra un marcador existente para moverlo.'
+        : 'Arrastra para mirar alrededor. Los marcadores circulares permiten saltar entre ubicaciones.';
+      setStatus(editing ? '✎ Editando puntos de salto' : (afScene.is('vr-mode') ? '● Modo inmersivo activo' : '● Modo panorámico'));
+      if (editing) {
+        updateTargetOptions(); renderHotspots(); renderHotspotList();
+      } else {
+        selectedHotspotId = null; renderHotspots(); renderHotspotList();
+      }
+    }
+
+    function handleHotspotActivation(id) {
+      const h = currentHotspots().find(item => item.id === id);
+      if (!h) return;
+      if (editing) { selectHotspot(id); return; }
+      const targetIndex = scenes.findIndex(s => s.id === h.target);
+      if (targetIndex >= 0) goTo(targetIndex);
+    }
+
+    function activateGazeHotspot() {
+      if (!gazeHoveredHotspotId || editing || !afScene.is('vr-mode')) return;
+      handleHotspotActivation(gazeHoveredHotspotId);
+    }
+
+    function hotspotIdFromElement(el) {
+      let node = el;
+      while (node && node !== afScene) {
+        if (node.classList?.contains('hotspot-root') && node.dataset.hotspotId) return node.dataset.hotspotId;
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function setRayFromPointer(event) {
+      const canvas = afScene.canvas;
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      pointerNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      afScene.object3D.updateMatrixWorld(true);
+      const camera = cameraEl.getObject3D('camera');
+      if (!camera) return null;
+      camera.updateMatrixWorld(true);
+      raycaster.setFromCamera(pointerNDC, camera);
+      return raycaster.ray;
+    }
+
+    function directionFromPointer(event) {
+      const ray = setRayFromPointer(event);
+      if (!ray) return new THREE.Vector3(0, 0, -HOTSPOT_RADIUS);
+      return ray.direction.clone().normalize().multiplyScalar(HOTSPOT_RADIUS);
+    }
+
+    function hotspotAtPointer(event) {
+      const ray = setRayFromPointer(event);
+      if (!ray) return null;
+      const roots = [...hotspotLayer.children].map(el => el.object3D);
+      if (!roots.length) return null;
+      const hits = raycaster.intersectObjects(roots, true);
+      if (!hits.length) return null;
+      let obj = hits[0].object;
+      while (obj && !obj.userData?.hotspotId) obj = obj.parent;
+      return obj?.userData?.hotspotId || null;
+    }
+
+    function updateDraggedHotspot(id, position) {
+      const h = currentHotspots().find(item => item.id === id);
+      if (!h) return;
+      h.position = { x: position.x, y: position.y, z: position.z };
+      const root = [...hotspotLayer.children].find(el => el.dataset.hotspotId === id);
+      if (root) setRootPose(root, h.position);
+    }
+
+    function setupDesktopEditor() {
+      const attach = () => {
+        const canvas = afScene.canvas;
+        if (!canvas || canvas.dataset.editorWired === '1') return;
+        canvas.dataset.editorWired = '1';
+        canvas.addEventListener('pointerdown', event => {
+          if (!editing || event.button !== 0) return;
+          const hitId = hotspotAtPointer(event);
+          if (!hitId) return;
+          event.preventDefault();
+          activeDragId = hitId;
+          selectHotspot(hitId);
+          cameraEl.setAttribute('look-controls', 'enabled', false);
+          try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+        });
+        canvas.addEventListener('pointermove', event => {
+          if (!editing || !activeDragId) return;
+          event.preventDefault();
+          updateDraggedHotspot(activeDragId, directionFromPointer(event));
+        });
+        canvas.addEventListener('pointerup', event => {
+          if (!activeDragId) return;
+          event.preventDefault();
+          activeDragId = null;
+          suppressClickUntil = Date.now() + 300;
+          cameraEl.setAttribute('look-controls', 'enabled', true);
+          saveLocal(false);
+          renderHotspotList();
+          $('saveState').textContent = 'Posición ajustada. Pulsa Guardar o exporta para compartir el recorrido.';
+          $('saveState').style.color = '#f3d49b';
+        });
+        canvas.addEventListener('pointercancel', () => {
+          if (!activeDragId) return;
+          activeDragId = null;
+          cameraEl.setAttribute('look-controls', 'enabled', true);
+        });
+        canvas.addEventListener('click', event => {
+          if (!editing || Date.now() < suppressClickUntil || activeDragId) return;
+          const hitId = hotspotAtPointer(event);
+          if (hitId) { selectHotspot(hitId); return; }
+          // Only use actual canvas clicks, not clicks on the overlaid HTML panels.
+          addHotspotAt(directionFromPointer(event));
+        });
+      };
+      if (afScene.canvas) attach();
+      afScene.addEventListener('renderstart', attach, { once: true });
+      afScene.addEventListener('loaded', attach, { once: true });
+    }
+
+    function downloadConfig() {
+      const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'recorrido-config.json';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      $('saveState').textContent = 'JSON exportado. Para que las Quest vean estos puntos, reemplaza assets/recorrido-config.json en el proyecto y vuelve a publicarlo.';
+      $('saveState').style.color = '#a8dfd1';
+    }
+
+    async function importConfigFile(file) {
+      if (!file) return;
+      try {
+        const raw = JSON.parse(await file.text());
+        config = normaliseConfig(raw);
+        selectedHotspotId = null;
+        renderScene(); saveLocal(false);
+        $('saveState').textContent = 'Configuración importada y cargada en este navegador.';
+        $('saveState').style.color = '#a8dfd1';
+      } catch (err) {
+        $('saveState').textContent = 'No se pudo leer el JSON. Exporta desde el editor y vuelve a intentarlo.';
+        $('saveState').style.color = '#f3b0a5';
+      } finally { $('importFile').value = ''; }
+    }
+
+    function setupGazeAndHands() {
+      gazeCursor.addEventListener('raycaster-intersection', event => {
+        const els = event.detail?.els || [];
+        gazeHoveredHotspotId = null;
+        for (const el of els) {
+          const id = hotspotIdFromElement(el);
+          if (id) { gazeHoveredHotspotId = id; break; }
+        }
+      });
+      gazeCursor.addEventListener('raycaster-intersection-cleared', () => { gazeHoveredHotspotId = null; });
+      for (const handId of ['leftHand', 'rightHand']) {
+        $(handId).addEventListener('pinchstarted', () => {
+          // Aim the center gaze reticle at a jump marker, then pinch to activate it.
+          activateGazeHotspot();
+        });
+      }
+    }
+
+    $('prevBtn').addEventListener('click', previous);
+    $('nextBtn').addEventListener('click', next);
+    $('editBtn').addEventListener('click', () => toggleEditor());
+    $('closeEditorBtn').addEventListener('click', () => toggleEditor(false));
+    $('mapBtn').addEventListener('click', openMap);
+    $('closeMapBtn').addEventListener('click', closeMap);
+    mapModal.addEventListener('click', e => { if (e.target === mapModal) closeMap(); });
+    $('vrPrev').addEventListener('click', previous);
+    $('vrNext').addEventListener('click', next);
+    $('vrMapBtn').addEventListener('click', openMap);
+    $('vrMapClose').addEventListener('click', closeMap);
+    $('targetSelect').addEventListener('change', () => {
+      const h = getSelectedHotspot();
+      if (h) { h.target = $('targetSelect').value; updateSelectedHotspotFromFields(); }
+      else refreshDefaultLabel();
+    });
+    $('labelInput').addEventListener('input', () => {
+      if (getSelectedHotspot()) updateSelectedHotspotFromFields();
+    });
+    $('saveBtn').addEventListener('click', () => saveLocal(true));
+    $('exportBtn').addEventListener('click', downloadConfig);
+    $('importBtn').addEventListener('click', () => $('importFile').click());
+    $('importFile').addEventListener('change', event => importConfigFile(event.target.files?.[0]));
+    $('deleteSelectedBtn').addEventListener('click', () => { if (selectedHotspotId) deleteHotspot(selectedHotspotId); });
+
+    $('vrBtn').addEventListener('click', async () => {
+      try {
+        if (!navigator.xr) { setStatus('WebXR no disponible en este navegador'); return; }
+        if (editing) toggleEditor(false);
+        if (afScene.is('vr-mode')) await afScene.exitVR(); else await afScene.enterVR();
+      } catch (err) {
+        setStatus('Abre esta web mediante HTTPS en Quest Browser');
+        console.warn('No se pudo iniciar VR:', err);
+      }
+    });
+
+    afScene.addEventListener('enter-vr', () => {
+      if (editing) toggleEditor(false);
+      vrMenu.setAttribute('visible', true);
+      vrMapPanel.setAttribute('visible', false);
+      $('desktopTopbar').classList.add('hidden');
+      $('desktopSceneCard').classList.add('hidden');
+      $('desktopControls').classList.add('hidden');
+      $('desktopHint').classList.add('hidden');
+      $('editorPanel').classList.add('hidden');
+      // Gaze dwell, controller laser, and hand pinch (while looking at a marker) are supported.
+      gazeCursor.setAttribute('cursor', 'fuse: true; fuseTimeout: 1400; rayOrigin: entity');
+      setStatus('● Modo inmersivo activo');
+    });
+    afScene.addEventListener('exit-vr', () => {
+      vrMenu.setAttribute('visible', false);
+      vrMapPanel.setAttribute('visible', false);
+      $('desktopTopbar').classList.remove('hidden');
+      $('desktopSceneCard').classList.remove('hidden');
+      $('desktopControls').classList.remove('hidden');
+      $('desktopHint').classList.remove('hidden');
+      if (editing) $('editorPanel').classList.remove('hidden');
+      gazeCursor.setAttribute('cursor', 'fuse: false; fuseTimeout: 1400; rayOrigin: entity');
+      setStatus(editing ? '✎ Editando puntos de salto' : '● Modo panorámico');
+    });
+
+    async function init() {
+      if (initialized) return; initialized = true;
+      await loadScenes();
+      await loadConfig();
+      renderScene();
+      setupDesktopEditor();
+      setupGazeAndHands();
+      if (!afScene.is('vr-mode')) gazeCursor.setAttribute('cursor', 'fuse: false; fuseTimeout: 1400; rayOrigin: entity');
+    }
+    afScene.addEventListener('loaded', init, { once: true });
+    if (afScene.hasLoaded) init();
+  })();
+  </script>
+</body>
+</html>

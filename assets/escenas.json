@@ -1,0 +1,88 @@
+{
+  "scenes": [
+    {
+      "id": "entrada",
+      "title": "Entrada principal",
+      "description": "Vista panorámica del acceso exterior a la cavidad.",
+      "image": "assets/entrada.jpg"
+    },
+    {
+      "id": "interior",
+      "title": "Interior del túnel",
+      "description": "Vista panorámica del interior rocoso y la continuación de la cueva.",
+      "image": "assets/interior.jpg"
+    },
+    {
+      "id": "galeria-arco-gris",
+      "title": "Galería del arco gris",
+      "description": "Cámara amplia con un arco rocoso gris y un paso oscuro al fondo.",
+      "image": "assets/galeria-arco-gris.jpg"
+    },
+    {
+      "id": "paso-iluminado",
+      "title": "Paso central iluminado",
+      "description": "Pasaje central con luces de referencia y continuación hacia el interior.",
+      "image": "assets/paso-iluminado.jpg"
+    },
+    {
+      "id": "galeria-arqueada",
+      "title": "Galería arqueada",
+      "description": "Arco natural de roca que enmarca una galería oscura.",
+      "image": "assets/galeria-arqueada.jpg"
+    },
+    {
+      "id": "tunel-estratificado",
+      "title": "Túnel de roca estratificada",
+      "description": "Galería de techo bajo con capas de roca visibles y un paso central.",
+      "image": "assets/tunel-estratificado.jpg"
+    },
+    {
+      "id": "camara-luminosa",
+      "title": "Cámara de paso iluminada",
+      "description": "Cámara con dos luces de trabajo y un corredor central.",
+      "image": "assets/camara-luminosa.jpg"
+    },
+    {
+      "id": "bifurcacion-rocosa",
+      "title": "Bifurcación rocosa",
+      "description": "Vista de varios huecos y pasos separados por formaciones rocosas.",
+      "image": "assets/bifurcacion-rocosa.jpg"
+    },
+    {
+      "id": "galeria-mineral-rojiza",
+      "title": "Galería de mineral rojizo",
+      "description": "Arco de tonos rojizos y ocres con un pasaje hacia el fondo.",
+      "image": "assets/galeria-mineral-rojiza.jpg"
+    },
+    {
+      "id": "pasaje-oscuro",
+      "title": "Pasaje oscuro",
+      "description": "Paso irregular y oscuro entre paredes rocosas.",
+      "image": "assets/pasaje-oscuro.jpg"
+    },
+    {
+      "id": "camara-arcos-laterales",
+      "title": "Cámara de arcos laterales",
+      "description": "Cámara de roca con aberturas a ambos lados y suelo de tierra.",
+      "image": "assets/camara-arcos-laterales.jpg"
+    },
+    {
+      "id": "galeria-estratos-ocres",
+      "title": "Galería de estratos ocres",
+      "description": "Formaciones grises y ocres alrededor de una abertura central.",
+      "image": "assets/galeria-estratos-ocres.jpg"
+    },
+    {
+      "id": "cruce-de-galerias",
+      "title": "Cruce de galerías",
+      "description": "Cruce con varios accesos visibles en distintas direcciones.",
+      "image": "assets/cruce-de-galerias.jpg"
+    },
+    {
+      "id": "arco-central-rojizo",
+      "title": "Arco central rojizo",
+      "description": "Arco de roca rojiza que enmarca el paso hacia el siguiente sector.",
+      "image": "assets/arco-central-rojizo.jpg"
+    }
+  ]
+}

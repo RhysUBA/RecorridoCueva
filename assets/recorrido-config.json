@@ -1,0 +1,282 @@
+{
+  "version": 1,
+  "hotspots": {
+    "entrada": [
+      {
+        "id": "hs-1793063785758-vqcmt",
+        "label": "Ir a Interior del túnel",
+        "target": "interior",
+        "position": {
+          "x": -4.059785650850275,
+          "y": -0.8230930145705421,
+          "z": -0.251313267686759
+        }
+      }
+    ],
+    "interior": [
+      {
+        "id": "hs-1793063798701-zemor",
+        "label": "Ir a Entrada principal",
+        "target": "entrada",
+        "position": {
+          "x": 3.98404708774728,
+          "y": -1.1404882722394116,
+          "z": -0.22170995353565454
+        }
+      },
+      {
+        "id": "hs-1793063820825-686zc",
+        "label": "Ir a Galería del arco gris",
+        "target": "galeria-arco-gris",
+        "position": {
+          "x": -4.13058613116656,
+          "y": -0.38271917571753944,
+          "z": 0.11951671662391329
+        }
+      }
+    ],
+    "galeria-arco-gris": [
+      {
+        "id": "hs-1793063845567-tnwsh",
+        "label": "Ir a Interior del túnel",
+        "target": "interior",
+        "position": {
+          "x": 4.019738905120593,
+          "y": -0.9859000956057536,
+          "z": 0.3036447531976641
+        }
+      },
+      {
+        "id": "hs-1793063864631-pzu4j",
+        "label": "Ir a Paso central iluminado",
+        "target": "paso-iluminado",
+        "position": {
+          "x": -4.099509610440419,
+          "y": -0.40300189561576055,
+          "z": -0.5040936679197185
+        }
+      }
+    ],
+    "paso-iluminado": [
+      {
+        "id": "hs-1793063903999-ditim",
+        "label": "Ir a Galería arqueada",
+        "target": "galeria-arqueada",
+        "position": {
+          "x": -4.147193661230395,
+          "y": -0.09774025675673186,
+          "z": 0.11718181795641207
+        }
+      },
+      {
+        "id": "hs-1793063924215-f0yqc",
+        "label": "Ir a Galería del arco gris",
+        "target": "galeria-arco-gris",
+        "position": {
+          "x": 4.132885370815763,
+          "y": -0.19425393665964155,
+          "z": 0.32252739385871637
+        }
+      }
+    ],
+    "galeria-arqueada": [
+      {
+        "id": "hs-1793063966270-i4bkq",
+        "label": "Ir a Paso central iluminado",
+        "target": "paso-iluminado",
+        "position": {
+          "x": 4.116548693431326,
+          "y": -0.14196182913215713,
+          "z": -0.506333579449656
+        }
+      },
+      {
+        "id": "hs-1793063980632-p3w56",
+        "label": "Ir a Túnel de roca estratificada",
+        "target": "tunel-estratificado",
+        "position": {
+          "x": -4.106165122687033,
+          "y": -0.39025807323233286,
+          "z": 0.45782815717862785
+        }
+      }
+    ],
+    "tunel-estratificado": [
+      {
+        "id": "hs-1793064014707-ty61a",
+        "label": "Ir a Galería arqueada",
+        "target": "galeria-arqueada",
+        "position": {
+          "x": 4.092351518264131,
+          "y": 0.0008864621032659374,
+          "z": -0.689317245646886
+        }
+      },
+      {
+        "id": "hs-1793064030619-mcpw2",
+        "label": "Ir a Cámara de paso iluminada",
+        "target": "camara-luminosa",
+        "position": {
+          "x": -3.9139072613891117,
+          "y": -0.7401554654663142,
+          "z": -1.1644740599025514
+        }
+      }
+    ],
+    "camara-luminosa": [
+      {
+        "id": "hs-1793064064118-a4xuc",
+        "label": "Ir a Túnel de roca estratificada",
+        "target": "tunel-estratificado",
+        "position": {
+          "x": 3.6276958754060815,
+          "y": -0.6809451057417213,
+          "z": -1.8970072215276634
+        }
+      },
+      {
+        "id": "hs-1793064081776-2a9g6",
+        "label": "Ir a Bifurcación rocosa",
+        "target": "bifurcacion-rocosa",
+        "position": {
+          "x": -3.938879112857061,
+          "y": -0.5432325973790828,
+          "z": -1.1885409877001085
+        }
+      }
+    ],
+    "bifurcacion-rocosa": [
+      {
+        "id": "hs-1793064108758-1b89u",
+        "label": "Ir a Cámara de paso iluminada",
+        "target": "camara-luminosa",
+        "position": {
+          "x": -4.08721733576956,
+          "y": -0.3469300502938016,
+          "z": 0.629915859768531
+        }
+      },
+      {
+        "id": "hs-1793064128686-tnb6k",
+        "label": "Ir a Galería de mineral rojizo",
+        "target": "galeria-mineral-rojiza",
+        "position": {
+          "x": -0.4028815888720807,
+          "y": -1.2924187989096891,
+          "z": 3.922988666001057
+        }
+      },
+      {
+        "id": "hs-1793064147140-w37b2",
+        "label": "Ir a Pasaje oscuro",
+        "target": "pasaje-oscuro",
+        "position": {
+          "x": 3.5269646077982046,
+          "y": -1.2003897870681772,
+          "z": -1.828137033824674
+        }
+      }
+    ],
+    "galeria-mineral-rojiza": [
+      {
+        "id": "hs-1793064184140-wgdes",
+        "label": "Ir a Bifurcación rocosa",
+        "target": "bifurcacion-rocosa",
+        "position": {
+          "x": 3.9695237937605383,
+          "y": -1.1820812823947158,
+          "z": 0.26089210908154575
+        }
+      },
+      {
+        "id": "hs-1793064249761-pffaw",
+        "label": "Ir a Cámara de arcos laterales",
+        "target": "camara-arcos-laterales",
+        "position": {
+          "x": -4.086580236446007,
+          "y": -0.5697880504573207,
+          "z": 0.4446386720078935
+        }
+      }
+    ],
+    "pasaje-oscuro": [
+      {
+        "id": "hs-1793064210679-wnb6g",
+        "label": "Ir a Bifurcación rocosa",
+        "target": "bifurcacion-rocosa",
+        "position": {
+          "x": -4.065486285105264,
+          "y": -0.7966721410008916,
+          "z": 0.24420230419482952
+        }
+      },
+      {
+        "id": "hs-1793064424906-m9hld",
+        "label": "Ir a Cruce de galerías",
+        "target": "cruce-de-galerias",
+        "position": {
+          "x": 4.047843243974838,
+          "y": -0.8715174445824199,
+          "z": -0.27914586867047686
+        }
+      }
+    ],
+    "camara-arcos-laterales": [
+      {
+        "id": "hs-1793064228350-6rcd7",
+        "label": "Ir a Galería de mineral rojizo",
+        "target": "galeria-mineral-rojiza",
+        "position": {
+          "x": 3.802168811008773,
+          "y": -0.8479211723754579,
+          "z": 1.4307487613237932
+        }
+      }
+    ],
+    "galeria-estratos-ocres": [
+      {
+        "id": "hs-1793064292770-9obka",
+        "label": "Ir a Pasaje oscuro",
+        "target": "pasaje-oscuro",
+        "position": {
+          "x": -3.748602970293808,
+          "y": -0.8699136286692369,
+          "z": 1.5536170859513514
+        }
+      },
+      {
+        "id": "hs-1793064308970-w5n55",
+        "label": "Ir a Arco central rojizo",
+        "target": "arco-central-rojizo",
+        "position": {
+          "x": 3.944930746876873,
+          "y": -1.2273263568037722,
+          "z": -0.39203496813455074
+        }
+      }
+    ],
+    "cruce-de-galerias": [
+      {
+        "id": "hs-1793064455294-v7a20",
+        "label": "Ir a Pasaje oscuro",
+        "target": "pasaje-oscuro",
+        "position": {
+          "x": -3.649637627211112,
+          "y": -0.03466559830758538,
+          "z": 1.975207200862438
+        }
+      },
+      {
+        "id": "hs-1793064471633-1tbyf",
+        "label": "Ir a Paso central iluminado",
+        "target": "paso-iluminado",
+        "position": {
+          "x": -0.6232028492159526,
+          "y": -0.03466517057088933,
+          "z": -4.102793747518684
+        }
+      }
+    ],
+    "arco-central-rojizo": []
+  }
+}
