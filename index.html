@@ -148,12 +148,13 @@
     <a-entity id="cameraRig">
       <a-camera id="camera" position="0 0 0" look-controls="enabled: true" wasd-controls="enabled: false">
         <a-entity id="gazeCursor" cursor="fuse: true; fuseTimeout: 1400; rayOrigin: entity" raycaster="objects: .vr-clickable; far: 8" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.008; radiusOuter: 0.014" material="color: #f3d49b; shader: flat"></a-entity>
-        <!-- Pequeño control permanente en el borde inferior derecho para recuperar el HUD cuando está oculto. -->
-        <a-entity id="vrHudToggle" visible="false" position="0.56 -0.48 -1.10">
-          <a-plane id="vrHudToggleButton" class="vr-clickable" width="0.34" height="0.13" material="color: #2b3930; opacity: 0.94; transparent: true; shader: flat" side="double"></a-plane>
-          <a-text id="vrHudToggleLabel" value="− HUD" align="center" width="0.30" color="#f1eee3" position="0 0 0.01"></a-text>
-        </a-entity>
       </a-camera>
+    </a-entity>
+
+    <!-- Este botón pertenece al espacio de la escena, NO a la cámara: se coloca al entrar en VR y queda fijo en el mundo. -->
+    <a-entity id="vrHudToggle" visible="false" position="0.90 -0.62 -1.55">
+      <a-plane id="vrHudToggleButton" class="vr-clickable" width="0.34" height="0.13" material="color: #2b3930; opacity: 0.96; transparent: true; shader: flat" side="double"></a-plane>
+      <a-text id="vrHudToggleLabel" value="− HUD" align="center" width="0.30" color="#f1eee3" position="0 0 0.01"></a-text>
     </a-entity>
 
     <a-entity id="leftLaser" laser-controls="hand: left" raycaster="objects: .vr-clickable; far: 8" line="color: #c6a36a; opacity: 0.78"></a-entity>
@@ -215,7 +216,7 @@
 
     // Place a VR panel at the current view direction once; it is then stationary in world space.
     // This allows the gaze reticle to move onto the controls and the controller laser to hit them.
-    function positionHudInFrontOfCamera(el, distance = 1.55, verticalOffset = -0.30) {
+    function positionHudInFrontOfCamera(el, distance = 1.55, verticalOffset = -0.30, horizontalOffset = 0) {
       const cameraObject = cameraEl.getObject3D('camera') || cameraEl.object3D;
       afScene.object3D.updateMatrixWorld(true);
       cameraObject.updateMatrixWorld(true);
@@ -226,7 +227,8 @@
       const euler = new THREE.Euler().setFromQuaternion(cameraQuaternion, 'YXZ');
       const yawQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), euler.y);
       const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(yawQuaternion);
-      el.object3D.position.copy(cameraPosition).addScaledVector(forward, distance);
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(yawQuaternion);
+      el.object3D.position.copy(cameraPosition).addScaledVector(forward, distance).addScaledVector(right, horizontalOffset);
       el.object3D.position.y += verticalOffset;
       el.object3D.quaternion.copy(yawQuaternion);
       el.object3D.updateMatrixWorld(true);
@@ -345,11 +347,18 @@
       vrHudState = state;
       if (state === 'menu') {
         vrMapPanel.setAttribute('visible', false);
-        if (reposition) positionHudInFrontOfCamera(vrMenu, 1.55, -0.30);
+        if (reposition) {
+          positionHudInFrontOfCamera(vrMenu, 1.55, -0.30);
+          // El control se coloca junto al borde inferior derecho del menú, pero queda como entidad de mundo.
+          positionHudInFrontOfCamera(vrHudToggle, 1.55, -0.62, 0.90);
+        }
         vrMenu.setAttribute('visible', true);
       } else if (state === 'map') {
         vrMenu.setAttribute('visible', false);
-        if (reposition) positionHudInFrontOfCamera(vrMapPanel, 1.55, 0.0);
+        if (reposition) {
+          positionHudInFrontOfCamera(vrMapPanel, 1.55, 0.0);
+          positionHudInFrontOfCamera(vrHudToggle, 1.55, -0.82, 0.84);
+        }
         vrMapPanel.setAttribute('visible', true);
       } else {
         vrMenu.setAttribute('visible', false);
@@ -360,8 +369,8 @@
 
     function toggleVrHud() {
       if (!afScene.is('vr-mode')) return;
-      // Al recuperar el HUD, siempre mostramos el menú principal frente a la vista actual.
-      setVrHudState(vrHudState === 'hidden' ? 'menu' : 'hidden', true);
+      // El botón de recuperación es fijo en el mundo. Al activarlo, mostrar/ocultar el menú sin moverlo.
+      setVrHudState(vrHudState === 'hidden' ? 'menu' : 'hidden', false);
     }
 
     function openMap() {
