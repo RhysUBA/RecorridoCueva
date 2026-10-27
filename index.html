@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101714">
-  <title>Recorrido inmersivo de la cueva · Beta 0.4</title>
+  <title>Recorrido inmersivo de la cueva · Beta 0.6</title>
   <meta name="description" content="Prototipo panorámico inmersivo de una cueva con editor de puntos de salto.">
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <style>
@@ -67,7 +67,7 @@
 </head>
 <body>
   <div class="chrome topbar" id="desktopTopbar">
-    <div class="brand"><div class="eyebrow">Prototipo de investigación · Beta 0.5</div><h1>Recorrido inmersivo de la cueva</h1></div>
+    <div class="brand"><div class="eyebrow">Prototipo de investigación · Beta 0.6</div><h1>Recorrido inmersivo de la cueva</h1></div>
     <div class="status" id="statusPill">● Modo panorámico</div>
   </div>
 
@@ -125,29 +125,30 @@
     <a-sky id="panoramaSky" src="#pano-entrada" rotation="0 0 0"></a-sky>
     <a-entity id="hotspotLayer"></a-entity>
 
+    <!-- Los paneles VR están en el espacio de la escena, no unidos a la cámara.
+         Se colocan delante de la vista al entrar en VR y permanecen quietos para poder apuntarlos. -->
+    <a-entity id="vrMenu" visible="false" position="0 -0.30 -1.55">
+      <a-plane width="1.58" height="0.40" material="color: #111a15; opacity: 0.91; transparent: true; shader: flat" position="0 0 -0.01"></a-plane>
+      <a-text id="vrTitle" value="PUNTO 01 · ENTRADA PRINCIPAL" align="center" width="1.55" color="#f1eee3" position="0 0.13 0.01"></a-text>
+      <a-plane id="vrPrev" class="vr-clickable" width="0.43" height="0.18" position="-0.49 -0.075 0.02" material="color: #2b3930; shader: flat" side="double"></a-plane>
+      <a-text value="ANTERIOR" align="center" width="0.60" color="#f1eee3" position="-0.49 -0.075 0.03"></a-text>
+      <a-plane id="vrNext" class="vr-clickable" width="0.44" height="0.18" position="0.00 -0.075 0.02" material="color: #c6a36a; shader: flat" side="double"></a-plane>
+      <a-text value="SIGUIENTE" align="center" width="0.64" color="#151711" position="0 -0.075 0.03"></a-text>
+      <a-plane id="vrMapBtn" class="vr-clickable" width="0.37" height="0.18" position="0.49 -0.075 0.02" material="color: #2b3930; shader: flat" side="double"></a-plane>
+      <a-text value="PLANO" align="center" width="0.52" color="#f1eee3" position="0.49 -0.075 0.03"></a-text>
+    </a-entity>
+
+    <a-entity id="vrMapPanel" visible="false" position="0 0 -1.55">
+      <a-plane width="1.40" height="1.42" material="color: #111a15; opacity: 0.96; transparent: true; shader: flat" position="0 0 -0.02"></a-plane>
+      <a-text value="PLANO DE REFERENCIA" align="center" width="1.6" color="#f1eee3" position="0 0.58 0.01"></a-text>
+      <a-image src="#plano-vr" width="1.16" height="1.00" position="0 0.02 0.01"></a-image>
+      <a-plane id="vrMapClose" class="vr-clickable" width="0.68" height="0.22" position="0 -0.58 0.03" material="color: #c6a36a; shader: flat" side="double"></a-plane>
+      <a-text value="VOLVER AL RECORRIDO" align="center" width="1.0" color="#151711" position="0 -0.58 0.04"></a-text>
+    </a-entity>
     <a-entity id="cameraRig">
       <a-camera id="camera" position="0 0 0" look-controls="enabled: true" wasd-controls="enabled: false">
         <a-entity id="gazeCursor" cursor="fuse: true; fuseTimeout: 1400; rayOrigin: entity" raycaster="objects: .vr-clickable; far: 8" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.008; radiusOuter: 0.014" material="color: #f3d49b; shader: flat"></a-entity>
 
-        <a-entity id="vrMenu" visible="false" position="0 -0.52 -1.60">
-          <!-- Panel de navegación reducido para ocupar menos espacio visual en el visor. -->
-          <a-plane width="1.58" height="0.40" material="color: #111a15; opacity: 0.91; transparent: true; shader: flat" position="0 0 -0.01"></a-plane>
-          <a-text id="vrTitle" value="PUNTO 01 · ENTRADA PRINCIPAL" align="center" width="1.55" color="#f1eee3" position="0 0.13 0.01"></a-text>
-          <a-plane id="vrPrev" class="vr-clickable" width="0.43" height="0.18" position="-0.49 -0.075 0.02" material="color: #2b3930; shader: flat" side="double"></a-plane>
-          <a-text value="ANTERIOR" align="center" width="0.60" color="#f1eee3" position="-0.49 -0.075 0.03"></a-text>
-          <a-plane id="vrNext" class="vr-clickable" width="0.44" height="0.18" position="0.00 -0.075 0.02" material="color: #c6a36a; shader: flat" side="double"></a-plane>
-          <a-text value="SIGUIENTE" align="center" width="0.64" color="#151711" position="0 -0.075 0.03"></a-text>
-          <a-plane id="vrMapBtn" class="vr-clickable" width="0.37" height="0.18" position="0.49 -0.075 0.02" material="color: #2b3930; shader: flat" side="double"></a-plane>
-          <a-text value="PLANO" align="center" width="0.52" color="#f1eee3" position="0.49 -0.075 0.03"></a-text>
-        </a-entity>
-
-        <a-entity id="vrMapPanel" visible="false" position="0 0 -1.55">
-          <a-plane width="1.40" height="1.42" material="color: #111a15; opacity: 0.96; transparent: true; shader: flat" position="0 0 -0.02"></a-plane>
-          <a-text value="PLANO DE REFERENCIA" align="center" width="1.6" color="#f1eee3" position="0 0.58 0.01"></a-text>
-          <a-image src="#plano-vr" width="1.16" height="1.00" position="0 0.02 0.01"></a-image>
-          <a-plane id="vrMapClose" class="vr-clickable" width="0.68" height="0.22" position="0 -0.58 0.03" material="color: #c6a36a; shader: flat" side="double"></a-plane>
-          <a-text value="VOLVER AL RECORRIDO" align="center" width="1.0" color="#151711" position="0 -0.58 0.04"></a-text>
-        </a-entity>
       </a-camera>
     </a-entity>
 
@@ -178,7 +179,7 @@
       { id: 'cruce-de-galerias', title: 'Cruce de galerías', description: 'Cruce con varios accesos visibles en distintas direcciones.', image: 'assets/cruce-de-galerias.jpg' },
       { id: 'arco-central-rojizo', title: 'Arco central rojizo', description: 'Arco de roca rojiza que enmarca el paso hacia el siguiente sector.', image: 'assets/arco-central-rojizo.jpg' }
     ];
-    const STORAGE_KEY = 'cueva-vr-hotspots-v3';
+    const STORAGE_KEY = 'cueva-vr-hotspots-v4';
     const CONFIG_URL = 'assets/recorrido-config.json';
     const SCENES_URL = 'assets/escenas.json';
     const HOTSPOT_RADIUS = 4.15;
@@ -201,6 +202,26 @@
     let config = { version: 1, hotspots: Object.fromEntries(scenes.map(s => [s.id, []])) };
     let gazeHoveredHotspotId = null;
     let initialized = false;
+
+
+    // Place a VR panel at the current view direction once; it is then stationary in world space.
+    // This allows the gaze reticle to move onto the controls and the controller laser to hit them.
+    function positionHudInFrontOfCamera(el, distance = 1.55, verticalOffset = -0.30) {
+      const cameraObject = cameraEl.getObject3D('camera') || cameraEl.object3D;
+      afScene.object3D.updateMatrixWorld(true);
+      cameraObject.updateMatrixWorld(true);
+      const cameraPosition = new THREE.Vector3();
+      const cameraQuaternion = new THREE.Quaternion();
+      cameraObject.getWorldPosition(cameraPosition);
+      cameraObject.getWorldQuaternion(cameraQuaternion);
+      const euler = new THREE.Euler().setFromQuaternion(cameraQuaternion, 'YXZ');
+      const yawQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), euler.y);
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(yawQuaternion);
+      el.object3D.position.copy(cameraPosition).addScaledVector(forward, distance);
+      el.object3D.position.y += verticalOffset;
+      el.object3D.quaternion.copy(yawQuaternion);
+      el.object3D.updateMatrixWorld(true);
+    }
 
     const sceneById = id => scenes.find(s => s.id === id) || scenes[0];
     const currentScene = () => scenes[current];
@@ -243,7 +264,7 @@
 
     async function loadScenes() {
       try {
-        const res = await fetch(`${SCENES_URL}?v=5`, { cache: 'no-store' });
+        const res = await fetch(`${SCENES_URL}?v=6`, { cache: 'no-store' });
         if (!res.ok) throw new Error(`No se pudo leer escenas.json (${res.status})`);
         const raw = await res.json();
         if (!Array.isArray(raw.scenes) || raw.scenes.length < 2) {
@@ -269,7 +290,7 @@
     async function loadConfig() {
       let loaded = null;
       try {
-        const res = await fetch(`${CONFIG_URL}?v=3`, { cache: 'no-store' });
+        const res = await fetch(`${CONFIG_URL}?v=6`, { cache: 'no-store' });
         if (res.ok) loaded = await res.json();
       } catch (_) { /* file:// or offline: use local/default config */ }
       try {
@@ -307,13 +328,17 @@
     function openMap() {
       if (afScene.is('vr-mode')) {
         vrMenu.setAttribute('visible', false);
+        positionHudInFrontOfCamera(vrMapPanel, 1.55, 0.0);
         vrMapPanel.setAttribute('visible', true);
       } else mapModal.classList.add('open');
     }
     function closeMap() {
       mapModal.classList.remove('open');
       vrMapPanel.setAttribute('visible', false);
-      if (afScene.is('vr-mode')) vrMenu.setAttribute('visible', true);
+      if (afScene.is('vr-mode')) {
+        positionHudInFrontOfCamera(vrMenu, 1.55, -0.30);
+        vrMenu.setAttribute('visible', true);
+      }
     }
 
     function updateTargetOptions() {
@@ -687,14 +712,20 @@
 
     afScene.addEventListener('enter-vr', () => {
       if (editing) toggleEditor(false);
-      vrMenu.setAttribute('visible', true);
+      vrMenu.setAttribute('visible', false);
       vrMapPanel.setAttribute('visible', false);
       $('desktopTopbar').classList.add('hidden');
       $('desktopSceneCard').classList.add('hidden');
       $('desktopControls').classList.add('hidden');
       $('desktopHint').classList.add('hidden');
       $('editorPanel').classList.add('hidden');
-      // Gaze dwell, controller laser, and hand pinch (while looking at a marker) are supported.
+      // Let the XR camera pose update first, then place the HUD once in world space.
+      requestAnimationFrame(() => {
+        positionHudInFrontOfCamera(vrMenu, 1.55, -0.30);
+        positionHudInFrontOfCamera(vrMapPanel, 1.55, 0.0);
+        vrMenu.setAttribute('visible', true);
+      });
+      // Gaze dwell and controller laser can now reach the fixed-in-world controls.
       gazeCursor.setAttribute('cursor', 'fuse: true; fuseTimeout: 1400; rayOrigin: entity');
       setStatus('● Modo inmersivo activo');
     });
